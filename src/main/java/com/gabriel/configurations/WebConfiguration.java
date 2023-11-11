@@ -1,27 +1,29 @@
 package com.gabriel.configurations;
 
-import io.micronaut.context.annotation.Requires;
+import io.micronaut.context.annotation.Factory;
 import io.micronaut.http.HttpRequest;
+import io.micronaut.http.MutableHttpResponse;
+import io.micronaut.http.annotation.Filter;
 import io.micronaut.http.filter.HttpServerFilter;
-import jakarta.inject.Singleton;
+import io.micronaut.http.filter.ServerFilterChain;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
+import org.reactivestreams.Publisher;
 
-public class WebConfiguration {
+@Filter(value = "/**")
+@Factory
+public class WebConfiguration implements HttpServerFilter {
 
-    @Singleton
-    @Requires(beans = CorsFilter.class)
-    HttpServerFilter corsFilter(com.gabriel.configurations.CorsFilter corsFilter) {
-        return (request, chain) -> {
-            if (isPreflightRequest(request)) {
-                return chain.proceed(request);
-            }
-            return corsFilter.doFilter(request, chain);
-        };
+
+    @Override
+    public Publisher<MutableHttpResponse<?>> doFilter(HttpRequest<?> request, ServerFilterChain chain) {
+        return Flowable.fromCallable(() -> {
+            return true;
+        }).subscribeOn(Schedulers.io()).switchMap(a -> chain.proceed(request)).doOnNext(res -> {
+            res.getHeaders().add("Access-Control-Allow-Credentials","true");
+            res.getHeaders().add("Access-Control-Allow-Methods","*");
+            res.getHeaders().add("Access-Control-Allow-Origin","*");
+            res.getHeaders().add("Access-Control-Allow-Headers","*");
+        });
     }
-
-    private boolean isPreflightRequest(HttpRequest<?> request) {
-        return "OPTIONS".equalsIgnoreCase(request.getMethodName())
-                && request.getHeaders().contains("Origin")
-                && request.getHeaders().contains("Access-Control-Request-Method");
-    }
-
 }
