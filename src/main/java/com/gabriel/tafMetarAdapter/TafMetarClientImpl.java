@@ -3,6 +3,7 @@ package com.gabriel.tafMetarAdapter;
 import com.gabriel.exceptions.InvalidRequestException;
 import com.gabriel.exceptions.NotFoundException;
 import io.micronaut.core.util.StringUtils;
+import jakarta.inject.Singleton;
 
 import java.io.IOException;
 import java.net.URI;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@Singleton
 public class TafMetarClientImpl implements TafMetarClient {
 
     private final HttpClient client;
@@ -71,7 +73,7 @@ public class TafMetarClientImpl implements TafMetarClient {
 
     private List<String> splitStringByLine(String inputString) {
         Pattern p = Pattern.compile("[\\r\\n]+");
-        List<String> result = Arrays.asList(p.split(inputString));
+        List<String> result = Arrays.asList(p.split(inputString.replace("=","")));
         return result.stream().filter(StringUtils::hasText).collect(Collectors.toList());
     }
 }
